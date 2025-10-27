@@ -1,0 +1,543 @@
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import axios from 'axios';
+import './App.css';
+import './styles/neon.css';
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('App Error:', error, errorInfo);
+    this.setState({ error, errorInfo });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4" dir="rtl">
+          <div className="max-w-md w-full bg-slate-800/50 rounded-xl border border-red-500/30 p-6 text-center">
+            <h2 className="text-2xl font-bold text-red-400 mb-4">حدث خطأ غير متوقع</h2>
+            <p className="text-gray-300 mb-6">نأسف للإزعاج. يرجى تحديث الصفحة للمحاولة مرة أخرى.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+            >
+              تحديث الصفحة
+            </button>
+            <details className="mt-6 text-left text-xs text-gray-500">
+              <summary className="cursor-pointer mb-2">تفاصيل الخطأ</summary>
+              <pre className="whitespace-pre-wrap">{this.state.error?.toString()}</pre>
+            </details>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Context for global state
+const AppContext = createContext();
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+// Configure axios defaults
+axios.defaults.baseURL = API;
+
+// JWT Token management
+const getStoredToken = () => localStorage.getItem('neon_trader_token');
+const setStoredToken = (token) => localStorage.setItem('neon_trader_token', token);
+const removeStoredToken = () => localStorage.removeItem('neon_trader_token');
+
+// Set up axios interceptor for JWT tokens
+axios.interceptors.request.use(
+  (config) => {
+    const token = getStoredToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Handle 401 responses globally
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Token expired or invalid, clear it and redirect to login
+      removeStoredToken();
+      window.location.reload(); // Force re-authentication
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Components
+import Home from './components/Home';
+import Platforms from './components/Platforms';
+import Assistant from './components/Assistant';
+import Settings from './components/Settings';
+import NeonTradingTools from './components/NeonTradingTools';
+import SmartNotifications from './components/SmartNotifications';
+import NeonNavigation from './components/NeonNavigation';
+import Toast from './components/Toast';
+import Login from './components/Login';
+import NeonHeader from './components/NeonHeader';
+import SessionManager from './components/SessionManager';
+import UnlockScreen from './components/UnlockScreen';
+
+function App() {
+  const [currentPage, setCurrentPage] = useState('home');
+  const [portfolio, setPortfolio] = useState(null);
+  const [trades, setTrades] = useState([]);
+  const [platforms, setPlatforms] = useState([]);
+  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null); // New: Store current user info
+
+  // Toast system
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type, id: Date.now() });
+  };
+
+  const hideToast = () => {
+    setToast(null);
+  };
+
+  // JWT Authentication functions
+  const register = async (userData) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/auth/register', userData);
+      
+      const { access_token, user_id, email, username } = response.data;
+      
+      // Store JWT token
+      setStoredToken(access_token);
+      
+      // Set user info
+      const userInfo = { id: user_id, email, username };
+      setCurrentUser(userInfo);
+      setIsAuthenticated(true);
+      setIsLocked(false);
+      
+      // Load initial data
+      await Promise.all([
+        fetchPortfolio(),
+        fetchTrades(),
+        fetchPlatforms()
+      ]);
+      
+      return { success: true, message: 'تم إنشاء الحساب بنجاح' };
+    } catch (error) {
+      console.error('Registration error:', error);
+      const message = error.response?.data?.detail || 'خطأ في إنشاء الحساب';
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (loginData) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/auth/login', loginData);
+      
+      const { access_token, user_id, email, username } = response.data;
+      
+      // Store JWT token
+      setStoredToken(access_token);
+      
+      // Set user info
+      const userInfo = { id: user_id, email, username };
+      setCurrentUser(userInfo);
+      setIsAuthenticated(true);
+      setIsLocked(false);
+      
+      // Load initial data
+      await Promise.all([
+        fetchPortfolio(),
+        fetchTrades(),
+        fetchPlatforms()
+      ]);
+      
+      return { success: true, message: 'تم تسجيل الدخول بنجاح' };
+    } catch (error) {
+      console.error('Login error:', error);
+      const message = error.response?.data?.detail || 'خطأ في تسجيل الدخول';
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      // Clear JWT token
+      removeStoredToken();
+      
+      // Reset all state
+      setIsAuthenticated(false);
+      setIsLocked(false);
+      setCurrentUser(null);
+      setPortfolio(null);
+      setTrades([]);
+      setPlatforms([]);
+      setCurrentPage('home');
+      
+      return true;
+    } catch (error) {
+      console.error('Logout error:', error);
+      return false;
+    }
+  };
+
+  const lockApp = () => {
+    // Lock app temporarily without clearing session
+    setIsLocked(true);
+    showToast('تم قفل التطبيق مؤقتاً', 'info');
+  };
+
+  const unlockApp = async (masterPassword = null) => {
+    try {
+      // For temporary lock, verify current user still valid  
+      const currentUserResponse = await axios.get('/auth/me');
+      if (currentUserResponse.data) {
+        setIsLocked(false);
+        showToast('تم فتح القفل', 'success');
+        return true;
+      } else {
+        // Session invalid, redirect to login
+        await logout();
+        return false;
+      }
+    } catch (error) {
+      console.error('Unlock error:', error);
+      // If token expired, logout
+      await logout();
+      return false;
+    }
+  };
+
+  // Check authentication on app start
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = getStoredToken();
+        if (token) {
+          // Verify token with backend
+          try {
+            const response = await axios.get('/auth/me');
+            if (response.data) {
+              setCurrentUser(response.data);
+              setIsAuthenticated(true);
+              
+              // Load user settings and apply theme
+              try {
+                const settingsResponse = await axios.get('/user/settings');
+                if (settingsResponse.data && settingsResponse.data.theme) {
+                  document.documentElement.setAttribute('data-theme', settingsResponse.data.theme);
+                }
+              } catch (settingsError) {
+                console.error('Error loading user settings on app start:', settingsError);
+              }
+            } else {
+              // Invalid token
+              removeStoredToken();
+              setIsAuthenticated(false);
+            }
+          } catch (error) {
+            // Token expired or invalid
+            removeStoredToken();
+            setIsAuthenticated(false);
+          }
+        } else {
+          // No token
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Load data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isCheckingAuth && currentUser) {
+      fetchPortfolio();
+      fetchTrades();
+      fetchPlatforms();
+    }
+  }, [isAuthenticated, isCheckingAuth, currentUser]);
+
+  // API calls with JWT authentication
+  const fetchPortfolio = async () => {
+    try {
+      const response = await axios.get('/portfolio');
+      setPortfolio(response.data);
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+      showToast('خطأ في تحميل بيانات المحفظة', 'error');
+    }
+  };
+
+  const fetchTrades = async () => {
+    try {
+      const response = await axios.get('/trades');
+      setTrades(response.data);
+    } catch (error) {
+      console.error('Error fetching trades:', error);
+      showToast('خطأ في تحميل الصفقات', 'error');
+    }
+  };
+
+  const fetchPlatforms = async () => {
+    try {
+      const response = await axios.get('/platforms');
+      setPlatforms(response.data);
+    } catch (error) {
+      console.error('Error fetching platforms:', error);
+      showToast('خطأ في تحميل المنصات', 'error');
+    }
+  };
+
+  // User Settings Functions
+  const fetchUserSettings = async () => {
+    try {
+      const response = await axios.get('/user/settings');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user settings:', error);
+      // Return default settings if none exist
+      return {};
+    }
+  };
+
+  const updateUserSettings = async (settings) => {
+    try {
+      setLoading(true);
+      const response = await axios.put('/user/settings', settings);
+      showToast(response.data.message, 'success');
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user settings:', error);
+      showToast('خطأ في حفظ الإعدادات', 'error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const changeUserPassword = async (passwordData) => {
+    try {
+      setLoading(true);
+      const response = await axios.put('/user/change-password', passwordData);
+      showToast(response.data.message, 'success');
+      return response.data;
+    } catch (error) {
+      console.error('Error changing password:', error);
+      const errorMessage = error.response?.data?.detail || 'خطأ في تغيير كلمة المرور';
+      showToast(errorMessage, 'error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTrade = async (tradeData) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/trades', tradeData);
+      showToast(response.data.message, 'success');
+      await fetchTrades();
+      await fetchPortfolio();
+      return response.data;
+    } catch (error) {
+      console.error('Error creating trade:', error);
+      showToast('خطأ في إنشاء الصفقة', 'error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const closeTrade = async (tradeId) => {
+    try {
+      setLoading(true);
+      const response = await axios.put(`/trades/${tradeId}/close`);
+      showToast(response.data.message, 'success');
+      await fetchTrades();
+      await fetchPortfolio();
+      return response.data;
+    } catch (error) {
+      console.error('Error closing trade:', error);
+      showToast('خطأ في إغلاق الصفقة', 'error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addPlatform = async (platformData) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/platforms', platformData);
+      showToast(response.data.message, 'success');
+      await fetchPlatforms();
+      return response.data;
+    } catch (error) {
+      console.error('Error adding platform:', error);
+      showToast('خطأ في إضافة المنصة', 'error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testPlatform = async (platformId) => {
+    try {
+      setLoading(true);
+      const response = await axios.put(`/platforms/${platformId}/test`);
+      showToast(response.data.message, response.data.success ? 'success' : 'error');
+      await fetchPlatforms();
+      return response.data;
+    } catch (error) {
+      console.error('Error testing platform:', error);
+      showToast('خطأ في اختبار المنصة', 'error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const contextValue = {
+    // Page state
+    currentPage,
+    setCurrentPage,
+    
+    // Data
+    portfolio,
+    trades,
+    platforms,
+    loading,
+    
+    // Authentication & Lock
+    isAuthenticated,
+    isLocked,
+    setIsLocked,
+    currentUser,
+    register,
+    login,
+    logout,
+    lockApp,
+    
+    // Functions
+    showToast,
+    createTrade,
+    closeTrade,
+    addPlatform,
+    testPlatform,
+    fetchPortfolio,
+    fetchTrades,
+    fetchPlatforms,
+    fetchUserSettings,
+    updateUserSettings,
+    changeUserPassword,
+    userId: currentUser?.id
+  };
+
+  // Show loading screen during auth check
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center animate-pulse">
+            <span className="text-white font-bold text-xl">N7</span>
+          </div>
+          <div className="spinner mb-4"></div>
+          <p className="text-white">جاري تحميل التطبيق...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AppContext.Provider value={contextValue}>
+      <div className="app min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" dir="rtl">
+        {/* Glass morphism background */}
+        <div className="fixed inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-pink-900/20 backdrop-blur-sm"></div>
+        
+        {!isAuthenticated ? (
+          // Login Screen
+          <Login />
+        ) : isLocked ? (
+          // Unlock Screen - App is locked temporarily
+          <UnlockScreen onUnlock={unlockApp} />
+        ) : (
+          // Main App with Session Management
+          <SessionManager>
+            <ErrorBoundary>
+              <div className="flex">
+                {/* Navigation */}
+                <NeonNavigation />
+                
+                <div className="flex-1 flex flex-col">
+                  {/* Header */}
+                  <NeonHeader />
+                  
+                  {/* Main content */}
+                  <div className="relative z-10 flex-1">          
+                    {/* Page content - with proper margins for desktop/mobile */}
+                    <main className="pt-20 pb-20 md:pb-4 transition-all duration-300">
+                      {currentPage === 'home' && <Home />}
+                      {currentPage === 'platforms' && <Platforms />}
+                      {currentPage === 'assistant' && <Assistant />}
+                      {currentPage === 'tools' && <NeonTradingTools />}
+                      {currentPage === 'notifications' && <SmartNotifications />}
+                      {currentPage === 'settings' && <Settings />}
+                    </main>
+                  </div>
+                </div>
+              </div>
+            </ErrorBoundary>
+          </SessionManager>
+        )}
+
+        {/* Toast notifications */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={hideToast}
+          />
+        )}
+      </div>
+    </AppContext.Provider>
+  );
+}
+
+export { AppContext };
+export default App;

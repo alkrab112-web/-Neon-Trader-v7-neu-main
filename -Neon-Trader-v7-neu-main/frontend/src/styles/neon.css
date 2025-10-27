@@ -1,0 +1,445 @@
+/* Neon Trader V7 - Neon Cyber Dark Theme */
+/* Based on the project document specifications */
+
+:root {
+  /* Neon Colors - As per document */
+  --neon-cyan: #00fff2;
+  --neon-magenta: #ff0077;
+  --background-primary: #0b0e17;
+  --text-primary: #e0e0e0;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(0, 255, 242, 0.2);
+}
+
+/* Global Dark Theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neon-cyan) var(--background-primary);
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--background-primary);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--neon-cyan);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-magenta);
+}
+
+/* Neon Glow Effects */
+.neon-glow {
+  box-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+.neon-glow-cyan {
+  box-shadow: 
+    0 0 5px var(--neon-cyan),
+    0 0 10px var(--neon-cyan),
+    0 0 15px var(--neon-cyan),
+    0 0 20px var(--neon-cyan);
+}
+
+.neon-glow-magenta {
+  box-shadow: 
+    0 0 5px var(--neon-magenta),
+    0 0 10px var(--neon-magenta),
+    0 0 15px var(--neon-magenta),
+    0 0 20px var(--neon-magenta);
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--neon-cyan);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(0, 255, 242, 0.2);
+}
+
+/* Neon Buttons */
+.neon-button {
+  position: relative;
+  background: transparent;
+  border: 2px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.neon-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 255, 242, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.neon-button:hover {
+  color: #0b0e17;
+  background-color: var(--neon-cyan);
+  box-shadow: 
+    0 0 20px var(--neon-cyan),
+    inset 0 0 20px rgba(0, 255, 242, 0.1);
+}
+
+.neon-button:hover::before {
+  left: 100%;
+}
+
+.neon-button-magenta {
+  border-color: var(--neon-magenta);
+  color: var(--neon-magenta);
+}
+
+.neon-button-magenta:hover {
+  background-color: var(--neon-magenta);
+  box-shadow: 
+    0 0 20px var(--neon-magenta),
+    inset 0 0 20px rgba(255, 0, 119, 0.1);
+}
+
+/* Power Button States - As per document */
+.power-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  animation: pulse 2s infinite;
+}
+
+.power-on {
+  background-color: #00ff88;
+  box-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88, 0 0 30px #00ff88;
+}
+
+.power-off {
+  background-color: #ff0044;
+  box-shadow: 0 0 10px #ff0044, 0 0 20px #ff0044, 0 0 30px #ff0044;
+}
+
+.power-syncing {
+  background-color: #ffaa00;
+  box-shadow: 0 0 10px #ffaa00, 0 0 20px #ffaa00, 0 0 30px #ffaa00;
+  animation: blink 0.8s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@keyframes blink {
+  0% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+/* Neon Text Effects */
+.neon-text {
+  color: var(--neon-cyan);
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+.neon-text-magenta {
+  color: var(--neon-magenta);
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+/* Animated Gradients */
+.gradient-animate {
+  background: linear-gradient(-45deg, #00fff2, #ff0077, #00fff2, #ff0077);
+  background-size: 400% 400%;
+  animation: gradientShift 4s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Enhanced Input Fields */
+.neon-input {
+  background: rgba(11, 14, 23, 0.8);
+  border: 1px solid rgba(0, 255, 242, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.neon-input:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+  box-shadow: 
+    0 0 0 3px rgba(0, 255, 242, 0.1),
+    0 0 20px rgba(0, 255, 242, 0.2);
+  background: rgba(11, 14, 23, 0.9);
+}
+
+.neon-input::placeholder {
+  color: rgba(224, 224, 224, 0.5);
+}
+
+/* Loading Animations */
+.neon-loader {
+  border: 3px solid rgba(0, 255, 242, 0.2);
+  border-top: 3px solid var(--neon-cyan);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Data Visualization */
+.data-card {
+  background: linear-gradient(135deg, rgba(11, 14, 23, 0.9), rgba(30, 30, 30, 0.9));
+  border: 1px solid rgba(0, 255, 242, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.data-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+}
+
+.data-card:hover {
+  border-color: var(--neon-cyan);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 255, 242, 0.15);
+}
+
+/* Price Change Indicators */
+.price-up {
+  color: #00ff88;
+  text-shadow: 0 0 10px #00ff88;
+}
+
+.price-down {
+  color: #ff4444;
+  text-shadow: 0 0 10px #ff4444;
+}
+
+.price-neutral {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px var(--neon-cyan);
+}
+
+/* Navigation Enhancements */
+.nav-item {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: rgba(0, 255, 242, 0.1);
+  color: var(--neon-cyan);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(0, 255, 242, 0.2), rgba(255, 0, 119, 0.2));
+  color: var(--text-primary);
+  box-shadow: 0 0 20px rgba(0, 255, 242, 0.3);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--neon-cyan);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+  .glass-card {
+    margin: 0.5rem;
+    border-radius: 0.75rem;
+  }
+  
+  .neon-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .data-card {
+    padding: 1rem;
+  }
+}
+
+/* RTL Support - As per document requirements */
+[dir="rtl"] .nav-item.active::before {
+  right: 0;
+  left: auto;
+  border-radius: 2px 0 0 2px;
+}
+
+[dir="rtl"] .neon-button::before {
+  left: auto;
+  right: -100%;
+}
+
+[dir="rtl"] .neon-button:hover::before {
+  right: 100%;
+}
+
+/* Performance Optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Custom Animations */
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Charts and Data Visualization */
+.chart-container {
+  background: linear-gradient(135deg, rgba(11, 14, 23, 0.95), rgba(20, 25, 35, 0.95));
+  border: 1px solid rgba(0, 255, 242, 0.2);
+  border-radius: 1rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 49%,
+    rgba(0, 255, 242, 0.03) 50%,
+    transparent 51%
+  );
+  pointer-events: none;
+}
+
+/* Status Indicators */
+.status-connected {
+  color: #00ff88;
+  filter: drop-shadow(0 0 6px #00ff88);
+}
+
+.status-disconnected {
+  color: #ff4444;
+  filter: drop-shadow(0 0 6px #ff4444);
+}
+
+.status-syncing {
+  color: #ffaa00;
+  filter: drop-shadow(0 0 6px #ffaa00);
+  animation: pulse 1.5s ease-in-out infinite;
+}
