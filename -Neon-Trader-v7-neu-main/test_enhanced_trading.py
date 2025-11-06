@@ -3,7 +3,7 @@ import json
 import uuid
 
 def test_enhanced_trading():
-    base_url = "https://neon-trader-2.preview.emergentagent.com/api"
+    base_url = "https://neontrader-2.preview.emergentagent.com/api"
     
     # Setup authentication
     test_user_email = f"trader_{uuid.uuid4().hex[:8]}@neontrader.com"

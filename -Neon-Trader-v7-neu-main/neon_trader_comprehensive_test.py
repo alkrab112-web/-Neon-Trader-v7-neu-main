@@ -26,7 +26,7 @@ from typing import Dict, Any, Tuple
 class NeonTraderComprehensiveTester:
     def __init__(self):
         # Use the production URL from frontend/.env
-        self.base_url = "https://neon-trader-2.preview.emergentagent.com/api"
+        self.base_url = "https://neontrader-2.preview.emergentagent.com/api"
         self.ws_url = "wss://neon-trader-2.preview.emergentagent.com/ws"
         
         # Test counters
