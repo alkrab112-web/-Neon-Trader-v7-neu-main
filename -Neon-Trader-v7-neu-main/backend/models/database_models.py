@@ -297,3 +297,98 @@ class RefreshToken(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     revoked = Column(Boolean, default=False)
+
+# New tables from PRD
+class Strategy(Base):
+    __tablename__ = "strategies"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    model_uri = Column(String(500), nullable=True)  # MLflow model URI
+    config_json = Column(JSON, nullable=True)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    is_backtested = Column(Boolean, default=False)
+    
+    # Performance
+    win_rate = Column(Float, nullable=True)
+    sharpe_ratio = Column(Float, nullable=True)
+    max_drawdown = Column(Float, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    signals = relationship("Signal", back_populates="strategy", cascade="all, delete-orphan")
+    metrics = relationship("ModelMetric", back_populates="strategy", cascade="all, delete-orphan")
+
+class ModelMetric(Base):
+    __tablename__ = "model_metrics"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    strategy_id = Column(String(36), ForeignKey("strategies.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Performance Metrics
+    sharpe_ratio = Column(Float, nullable=False)
+    sortino_ratio = Column(Float, nullable=True)
+    max_drawdown = Column(Float, nullable=False)
+    profit_factor = Column(Float, nullable=True)
+    win_rate = Column(Float, nullable=True)
+    
+    # Additional Metrics
+    total_trades = Column(Integer, default=0)
+    winning_trades = Column(Integer, default=0)
+    losing_trades = Column(Integer, default=0)
+    avg_win = Column(Float, nullable=True)
+    avg_loss = Column(Float, nullable=True)
+    
+    # Timeframe
+    evaluation_period_days = Column(Integer, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Relationships
+    strategy = relationship("Strategy", back_populates="metrics")
+
+class Signal(Base):
+    __tablename__ = "signals"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    strategy_id = Column(String(36), ForeignKey("strategies.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Signal Details
+    symbol = Column(String(50), nullable=False, index=True)
+    side = Column(String(10), nullable=False)  # buy, sell
+    size = Column(Float, nullable=False)
+    
+    # Price Targets
+    entry_price = Column(Float, nullable=True)
+    stop_loss = Column(Float, nullable=True)
+    take_profit = Column(Float, nullable=True)
+    
+    # Confidence
+    score = Column(Float, nullable=False)  # 0-100
+    confidence = Column(String(20), nullable=True)  # low, medium, high
+    
+    # Status
+    status = Column(String(20), nullable=False, default="pending")  # pending, approved, rejected, executed, expired
+    
+    # Execution
+    executed_trade_id = Column(String(36), nullable=True)
+    
+    # Timestamps
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    executed_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    strategy = relationship("Strategy", back_populates="signals")
+    
+    __table_args__ = (
+        Index('idx_signal_status', 'status', 'timestamp'),
+    )
